@@ -3,7 +3,7 @@ LaTC-Remote
 
 Pebble app for connecting to Telldus LIVE! server.
 
-Based on the work from https://github.com/mickeprag/telldus-live-pebble.git
+Based on the work of micke prag  on https://github.com/mickeprag/telldus-live-pebble.git
 
 Enter your 2 Telldus developer keys on lines 63, 64.
 
