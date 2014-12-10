@@ -65,7 +65,7 @@
     "shortName": "LaTC Remote",
     "uuid": "4b6b89d0-d209-45a5-b381-97e72f7b1665",
     "versionCode": 1,
-    "versionLabel": "1.0",
+    "versionLabel": "1.1",
     "watchapp": {
         "watchface": false
     }
