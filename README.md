@@ -11,3 +11,8 @@ When installing, press the settings button in the Pebble app to login to Telldus
 There sometimes (always?) will be an auth error message when loggin in but then go back to the pebble app and press settings again, then you get a second screen. Press yes.
 
 From now on it will connect when starting the app.
+
+Long press on middle button toggle sensor name size.
+
+1.1 
+- Toggle sensor name large / small
