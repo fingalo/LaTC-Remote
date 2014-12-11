@@ -5,7 +5,8 @@
 
 // Persistent data
 #define S_SENSOR_FLAG_PKEY 1
-  
+#define S_SENSOR_FORMAT_FLAG_PKEY 2
+ 
 	// Device methods
 #define TELLSTICK_TURNON	(1)
 #define TELLSTICK_TURNOFF	(2)
@@ -72,6 +73,7 @@ static int s_group_count = 0;
 static int s_sensor_count = 0;
 static bool s_sensor_flag = false;
 static int s_sensor_show_count = 0;
+static bool s_sensor_format_flag = false;
 
 void out_sent_handler(DictionaryIterator *sent, void *context) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "outgoing message was delivered");
@@ -271,8 +273,24 @@ static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_
     if (sensor->hum[0] != '\0') {
       p1 = '%';
     }  
-		snprintf (buff1,30,"        %s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
-    menu_cell_basic_draw(ctx, cell_layer, buff1, sensor->name,  NULL);
+//		snprintf (buff1,30,"        %s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
+//    menu_cell_basic_draw(ctx, cell_layer, buff1, sensor->name,  NULL);
+		
+		
+		if (!s_sensor_format_flag) {
+			graphics_context_set_text_color(ctx, GColorBlack);
+			snprintf (buff1,30,"%s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
+			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(30, 15, 110, 30), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+			snprintf (buff1,19,"%s",sensor->name);
+			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(2, -7, 140, 2), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+		}
+		else {
+			snprintf (buff1,30,"        %s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
+   		menu_cell_basic_draw(ctx, cell_layer, buff1, sensor->name,  NULL);
+		}
+
+		
+		
 	
 	} else {
 		
@@ -376,8 +394,11 @@ static void select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *
 
 static void select_long_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Select long callback, index: %i", cell_index->row);
-	if(cell_index->section == MENU_SECTION_ENVIRONMENT) 
+	if(cell_index->section == MENU_SECTION_ENVIRONMENT) {
+		s_sensor_format_flag = !s_sensor_format_flag;
+		layer_mark_dirty(menu_layer_get_layer(menuLayer));
 		return;
+	}
 	Device* device = &s_device_list_items[cell_index->row];
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Select callback, index: %i", cell_index->row);
 	if (device->methods & TELLSTICK_DIM) {
@@ -472,6 +493,7 @@ static void init(void) {
 	});
 	const bool animated = true;
 	s_sensor_flag = persist_exists(S_SENSOR_FLAG_PKEY) ? persist_read_bool(S_SENSOR_FLAG_PKEY) : false;
+	s_sensor_format_flag = persist_exists(S_SENSOR_FORMAT_FLAG_PKEY) ? persist_read_bool(S_SENSOR_FORMAT_FLAG_PKEY) : false;
 	window_stack_push(window, animated);
 
 	app_message_register_inbox_received(in_received_handler);
@@ -487,6 +509,7 @@ static void init(void) {
 
 static void deinit(void) {
 	persist_write_bool(S_SENSOR_FLAG_PKEY, s_sensor_flag);
+	persist_write_bool(S_SENSOR_FORMAT_FLAG_PKEY, s_sensor_format_flag);
 	window_destroy(window);
 }
 
