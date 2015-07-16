@@ -16,5 +16,6 @@ Long press on middle button toggle sensor name size.
 
 1.1 
 - Toggle sensor name large / small
+
 1.2
 - Bugfix to show all new devices
