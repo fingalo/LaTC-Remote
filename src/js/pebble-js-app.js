@@ -60,8 +60,10 @@ var pebbleSendQueue = {
 };
 
 var dispatcher = {
-	publicKey: 'PUT YOUR PUBLIC KEY HERE',
-	privateKey: 'PUT YOU PRIVATE KEY HERE',
+	publicKey: 'TRERU4HATHEPAWADRAXUNES3AP4GEWUS',
+	privateKey: 'ST8DABR4STEYUVAG6PHAVUPEGEF2AQAG',
+//	publicKey: 'PUT YOUR PUBLIC KEY HERE',
+//	privateKey: 'PUT YOU PRIVATE KEY HERE',
 	requestTokenUrl: 'https://api.telldus.com/oauth/requestToken',
 	authorizeUrl: 'https://api.telldus.com/oauth/authorize',
 	accessTokenUrl: 'https://api.telldus.com/oauth/accessToken',
@@ -106,7 +108,7 @@ var dispatcher = {
 				dispatcher.tokenSecret = params.oauth_token_secret;
 				window.localStorage.setItem('token', params.oauth_token);
 				window.localStorage.setItem('tokenSecret', params.oauth_token_secret);
-				pebbleSendQueue.send({ "module": "auth", "action": "done" });
+				pebbleSendQueue.send({ "module": "auth", "action": "log" });
 				Pebble.showSimpleNotificationOnPebble("Telldus Live!", "Pebble was successfully paired with your Telldus Live! account");
 				cb();
 			}
@@ -148,10 +150,43 @@ var dispatcher = {
 
 var devices = {};
 var sensors = {};
+var clients = {};
 
 function getDevices() {
   
+dispatcher.doCall('clients/list', '' , function(r) {
+	console.log("clients");
+
+	clients = r.client;
+	for(var i in clients) {
+		var name;
+		if (clients[i].name)
+			name = clients[i].name;
+		else 
+			name = 'unknown';
+		if (name.length > 16) {
+			name = name.substr(0,16);
+		} 
+		var online = 0;
+		var temp;
+		if (clients[i].online)
+			online = clients[i].online;
+			console.log(online);
+
+		pebbleSendQueue.send({
+			module: "client",
+			action: "info",
+			name: name,
+			temp: online
+		});
+		//pebbleSendQueue.send({ "module": "auth", "action": "log" });
+
+	}
+});
+	
+	
 dispatcher.doCall('sensors/list', { includeValues: 1}, function(r) {
+	console.log("sensor");
 	sensors = r.sensor;
 	for(var i in sensors) {
 		var name;
@@ -164,26 +199,50 @@ dispatcher.doCall('sensors/list', { includeValues: 1}, function(r) {
 		} 
 		
 		var temp = sensors[i].temp;
+		
 		var humidity = "";
 		if(sensors[i].humidity) {
 			humidity = sensors[i].humidity;
 		}
+		
+		var battery = "254";
+		if(sensors[i].battery) {
+			battery = sensors[i].battery;
+		}
+		
 		pebbleSendQueue.send({
 			module: "sensor",
 			action: "info",
 			name: name,
 			temp: temp,
 			hum: humidity,
-			id: parseInt(i)
+			id: parseInt(i),
+			battery: parseInt(battery)
 		});
 	}
+	pebbleSendQueue.send({ "module": "auth", "action": "done" });
 });
   
+	function is_int(value){ 
+  if((parseFloat(value) == parseInt(value)) && !isNaN(value)){
+      return true;
+  } else { 
+      return false;
+  } 
+}
+
+
 dispatcher.doCall('devices/list', {supportedMethods: 1023}, function(r) {
+	console.log("device");
 	devices = r.device;
 	for(var i in devices) {
 		var type = devices[i].type;
-		var dimvalue = parseInt(devices[i].statevalue);
+	
+		var dimvalue = 0;
+		
+		if (is_int(devices[i].statevalue)) {
+			dimvalue = parseInt(devices[i].statevalue);
+		}
 		
 		if (type == "group") {
 			dimvalue = 0;
@@ -193,7 +252,7 @@ dispatcher.doCall('devices/list', {supportedMethods: 1023}, function(r) {
 			type = 1;
 		
 		var name;
-		if (devices[i].name)
+		if (devices[i].name) 
 			name = devices[i].name;
 		else 
 			name = 'unknown';
@@ -219,7 +278,7 @@ dispatcher.doCall('devices/list', {supportedMethods: 1023}, function(r) {
 
 Pebble.addEventListener("ready", function(e) {
 	if (window.localStorage.getItem('myversion') != '1.0') {	
-		window.localStorage.setItem('myversion', '1.0');
+		window.localStorage.setItem('myversion', '1.1');
 		window.localStorage.setItem('token', '');
 		window.localStorage.setItem('tokenSecret', '');
 	}

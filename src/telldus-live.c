@@ -30,13 +30,15 @@ enum {
   AKEY_METHODS,
   AKEY_DIMVALUE,
   AKEY_TYPE,
+  AKEY_BATTERY,
 };
 
 static Window *window;
 static TextLayer *textLayer;
 static MenuLayer *menuLayer;
-static GBitmap *TelldusOn, *TelldusOff;
+static GBitmap *TelldusOn, *TelldusOff, *Cloud, *Cloudd;
 static GBitmap  *dim_icons[5];
+//AppTimer *timer;
 
 #define MAX_DEVICE_LIST_ITEMS (30)
 #define MAX_SENSOR_LIST_ITEMS (30)
@@ -45,8 +47,19 @@ static GBitmap  *dim_icons[5];
 #define MAX_SENSOR_NAME_LENGTH (17)
 #define MAX_TEMP_LENGTH (5)
 #define MAX_HUM_LENGTH (4)
+
+// sensor battery status
+// 0-100 - percentage left, if the sensor reports this
+// 253 - battery ok
+// 254 - battery status unknown (not reported by this sensor type, or not decoded)
+// 255 - battery low
+#define SENS_BATT_OK (253)
+#define SENS_BATT_UNKNOWN (254)
+#define SENS_BATT_LOW (255)
  
-enum  {MENU_SECTION_GROUP, MENU_SECTION_ENVIRONMENT, MENU_SECTION_DEVICE, MENU_SECTION_NUMBER};
+enum  {MENU_SECTION_CLIENT, MENU_SECTION_GROUP, MENU_SECTION_ENVIRONMENT, MENU_SECTION_DEVICE, MENU_SECTION_NUMBER};
+char client[MAX_DEVICE_NAME_LENGTH+1];
+char online[2];
 	
 typedef struct {
 	int id;
@@ -63,6 +76,7 @@ typedef struct {
 	char name[MAX_DEVICE_NAME_LENGTH+1];
 	char temp[MAX_TEMP_LENGTH+1];
 	char hum[MAX_HUM_LENGTH+1];
+	uint batt;
 } Sensor;
 
 static Device s_device_list_items[MAX_DEVICE_LIST_ITEMS];
@@ -74,6 +88,15 @@ static int s_sensor_count = 0;
 static bool s_sensor_flag = false;
 static int s_sensor_show_count = 0;
 static bool s_sensor_format_flag = false;
+static bool done = false;
+/*
+void timer_callback(void *data) {
+			client[0] = '\0';
+			layer_mark_dirty(menu_layer_get_layer(menuLayer));
+			timer = NULL;
+   //Register next execution
+}
+*/
 
 void out_sent_handler(DictionaryIterator *sent, void *context) {
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "outgoing message was delivered");
@@ -83,8 +106,9 @@ void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, voi
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "outgoing message failed");
 }
 
-void setSensor(int id, char *name, char *temp, char *hum) {
+void setSensor(int id, char *name, char *temp, char *hum, uint batt) {
 //	APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting sensor %i %s", id, name);
+//		APP_LOG(APP_LOG_LEVEL_DEBUG, "battlevel %s %u", name, batt);
 	if (s_sensor_count >= MAX_SENSOR_LIST_ITEMS) {
 		return;
 	}
@@ -92,6 +116,7 @@ void setSensor(int id, char *name, char *temp, char *hum) {
  	strncpy(s_sensor_list_items[s_sensor_count].name, name, MAX_SENSOR_NAME_LENGTH);
  	strncpy(s_sensor_list_items[s_sensor_count].temp, temp, MAX_TEMP_LENGTH);
  	strncpy(s_sensor_list_items[s_sensor_count].hum, hum, MAX_HUM_LENGTH);
+	s_sensor_list_items[s_sensor_count].batt = batt;
 	s_sensor_count++;
 	
 	if (s_sensor_flag == true){
@@ -148,10 +173,27 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 			text_layer_set_text(textLayer, "Please log in on your phone");
 		} else if (strcmp(actionTuple->value->cstring, "authenticating") == 0) {
 			text_layer_set_text(textLayer, "Authenticating...");
+//		} else if (strcmp(actionTuple->value->cstring, "log") == 0) {
+//			text_layer_set_text(textLayer, "LARSSONS   ONLINE");
 		} else if (strcmp(actionTuple->value->cstring, "done") == 0) {
-			text_layer_set_text(textLayer, "You are now logged in, more to come...");
-			layer_set_hidden(text_layer_get_layer(textLayer), true);
-			layer_set_hidden(menu_layer_get_layer(menuLayer), false);
+			if (done == false) {
+				done = true;
+			} else {
+//				timer = app_timer_register(5000, timer_callback, NULL);
+				layer_set_hidden(text_layer_get_layer(textLayer), true);
+				layer_set_hidden(menu_layer_get_layer(menuLayer), false);
+				menu_layer_reload_data(menuLayer);
+				MenuIndex index;
+				if (s_group_count > 0 ) 
+					index.section = 0;
+				else if (s_sensor_count > 0 ) 
+					index.section = 1;
+				else
+					index.section = 2;
+				index.row = 0;
+	//    APP_LOG(APP_LOG_LEVEL_DEBUG,"Set row: %i section: %i ",index.row, index.section);
+				menu_layer_set_selected_index( menuLayer, index, MenuRowAlignNone, false );  	
+			}
 		} else if (strcmp(actionTuple->value->cstring, "clear") == 0) {
 			s_device_count = 0;
 			s_sensor_count = 0;
@@ -197,19 +239,14 @@ void in_received_handler(DictionaryIterator *received, void *context) {
 					methodsTuple->value->int16,
 					dimvalueTuple->value->int16);
 		}
-    menu_layer_reload_data(menuLayer);
-    MenuIndex index;
-    index.section = 0;
-    index.row = 0;
-//    APP_LOG(APP_LOG_LEVEL_DEBUG,"Set row: %i section: %i ",index.row, index.section);
-    menu_layer_set_selected_index( menuLayer, index, MenuRowAlignNone, false );  	
 		
 	} else if (strcmp(moduleTuple->value->cstring, "sensor") == 0) {
 		Tuple *idTuple = dict_find(received, AKEY_ID);
 		Tuple *nameTuple = dict_find(received, AKEY_NAME);
 		Tuple *tempTuple = dict_find(received, AKEY_TEMP);
 		Tuple *humTuple = dict_find(received, AKEY_HUM);
-		if (!idTuple || !nameTuple || !tempTuple || !humTuple) {
+		Tuple *battTuple = dict_find(received, AKEY_BATTERY);
+		if (!idTuple || !nameTuple || !tempTuple || !humTuple || !battTuple) {
 			return;
 		} 
     for(int i=0; i<s_sensor_count; i++) { 
@@ -217,10 +254,17 @@ void in_received_handler(DictionaryIterator *received, void *context) {
         return;
       }
     }
-	  setSensor(idTuple->value->int8, nameTuple->value->cstring, tempTuple->value->cstring, humTuple->value->cstring);
-		menu_layer_reload_data(menuLayer);
-	}
+	  setSensor(idTuple->value->int8, nameTuple->value->cstring, tempTuple->value->cstring, humTuple->value->cstring, battTuple->value->uint8);
 
+	} else if (strcmp(moduleTuple->value->cstring, "client") == 0) {
+		Tuple *nameTuple = dict_find(received, AKEY_NAME);
+		Tuple *tempTuple = dict_find(received, AKEY_TEMP);
+		if (!nameTuple || !tempTuple) {
+			return;
+		} 
+	 	strncpy(client , nameTuple->value->cstring , MAX_SENSOR_NAME_LENGTH);
+	 	strncpy(online , tempTuple->value->cstring , 2);
+	}
 }
 
 void in_dropped_handler(AppMessageResult reason, void *context) {
@@ -251,7 +295,11 @@ static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data
 // You can also dynamically add and remove items using this
 static uint16_t get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
   switch (section_index) {
-    case MENU_SECTION_GROUP:
+		
+		case MENU_SECTION_CLIENT:
+			if (client[0] !='\0')
+					return 1;
+		case MENU_SECTION_GROUP:
       return s_group_count;;
     case MENU_SECTION_ENVIRONMENT:
       return s_sensor_show_count;;
@@ -268,7 +316,10 @@ static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_
 	if (cell_index->section == MENU_SECTION_ENVIRONMENT){
 		
     Sensor* sensor = &s_sensor_list_items[cell_index->row];
-    char buff1[30] = "";
+		
+		uint battlevel = sensor->batt;
+		int startx;
+		char buff1[30] = "";
     char p1 = ' ';
     if (sensor->hum[0] != '\0') {
       p1 = '%';
@@ -282,17 +333,35 @@ static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_
 			snprintf (buff1,30,"%s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
 			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(30, 15, 110, 30), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
 			snprintf (buff1,19,"%s",sensor->name);
-			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(2, -7, 140, 2), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(2, -7, 125, 2), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+			startx = 126;
 		}
 		else {
 			snprintf (buff1,30,"        %s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
    		menu_cell_basic_draw(ctx, cell_layer, buff1, sensor->name,  NULL);
+			startx = 5;
 		}
-
-		
-		
+		if (battlevel != SENS_BATT_UNKNOWN) {
+			if (battlevel < SENS_BATT_OK) 
+				battlevel = battlevel / 10;
+			else if (battlevel == SENS_BATT_OK)
+				battlevel = 10;
+			else battlevel = 1;
+			graphics_draw_rect(ctx, GRect(startx,7,14,8));
+			graphics_fill_rect(ctx, GRect(startx + 2,9,battlevel,4),0,GCornerNone);
+			graphics_draw_line(ctx, GPoint(startx + 14,9), GPoint(startx + 14,12));
+		}
 	
-	} else {
+	} else 	if (cell_index->section == MENU_SECTION_CLIENT) { 
+	
+		if (client[0] != '\0') {
+			if (online[0] == '1')
+				Img_status = Cloud;
+			else
+				Img_status = Cloudd;
+			menu_cell_basic_draw(ctx, cell_layer, client, NULL, Img_status);
+		}
+	} else {	
 		
     Device* device;		
 		if (cell_index->section == MENU_SECTION_DEVICE)
@@ -332,6 +401,11 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
   // Determine which section we're working with
   switch (section_index) {
 		
+    case MENU_SECTION_CLIENT:
+      // Draw title text in the section header
+      menu_cell_basic_header_draw(ctx, cell_layer, "Client");//client);
+      break;
+		
     case MENU_SECTION_GROUP:
       // Draw title text in the section header
       menu_cell_basic_header_draw(ctx, cell_layer, "Groups");
@@ -353,11 +427,38 @@ static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, ui
 // A callback is used to specify the height of the section header
 static int16_t menu_get_header_height_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
   // This is a define provided in pebble.h that you may use for the default height
-  return MENU_CELL_BASIC_HEADER_HEIGHT;
+ // return MENU_CELL_BASIC_HEADER_HEIGHT;
+  switch (section_index) {
+
+		case MENU_SECTION_CLIENT:
+			break; 
+		
+		case MENU_SECTION_GROUP:
+			if (s_group_count == 0) 
+				return 0;
+			break; 
+		
+    case MENU_SECTION_ENVIRONMENT:
+			if (s_sensor_show_count == 0) 
+				return 0;
+			break; 
+		
+    case MENU_SECTION_DEVICE:
+			if (s_device_count == 0) 
+				return 0;
+			break; 
+		
+    default:
+      return 0;	
+  }
+	return MENU_CELL_BASIC_HEADER_HEIGHT;
 }
 
 static void select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-  if(cell_index->section == MENU_SECTION_ENVIRONMENT) {
+	
+	if (cell_index->section == MENU_SECTION_CLIENT) return;
+	
+	if(cell_index->section == MENU_SECTION_ENVIRONMENT) {
 		if (s_sensor_flag == false){
 			s_sensor_flag = true;
 			s_sensor_show_count  = s_sensor_count;
@@ -371,36 +472,40 @@ static void select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *
 		menu_layer_set_selected_index( menuLayer, index, MenuRowAlignCenter , true );  	
 		menu_layer_reload_data(menuLayer);
     return;
-	}
+
+	} else 	{
 	
-	Device* device;
-	if (cell_index->section == MENU_SECTION_DEVICE)
-    	device = &s_device_list_items[cell_index->row];
-		else
-			device = &s_group_list_items[cell_index->row];
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	Tuplet module = TupletCString(AKEY_MODULE, "device");
-	dict_write_tuplet(iter, &module);
-	Tuplet action = TupletCString(AKEY_ACTION, "select");
-	dict_write_tuplet(iter, &action);
-	Tuplet id = TupletInteger(AKEY_ID, device->id);
-	dict_write_tuplet(iter, &id);
-  Tuplet methods = TupletInteger(AKEY_METHODS, 3);
-  dict_write_tuplet(iter, &methods);
-	app_message_outbox_send();
+		Device* device;
+		if (cell_index->section == MENU_SECTION_DEVICE)
+				device = &s_device_list_items[cell_index->row];
+			else
+				device = &s_group_list_items[cell_index->row];
+		DictionaryIterator *iter;
+		app_message_outbox_begin(&iter);
+		Tuplet module = TupletCString(AKEY_MODULE, "device");
+		dict_write_tuplet(iter, &module);
+		Tuplet action = TupletCString(AKEY_ACTION, "select");
+		dict_write_tuplet(iter, &action);
+		Tuplet id = TupletInteger(AKEY_ID, device->id);
+		dict_write_tuplet(iter, &id);
+		Tuplet methods = TupletInteger(AKEY_METHODS, 3);
+		dict_write_tuplet(iter, &methods);
+		app_message_outbox_send();
   device->dimvalue = 0;
+	}
 }
 
 static void select_long_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Select long callback, index: %i", cell_index->row);
+  if(cell_index->section == MENU_SECTION_GROUP) return;
+  if(cell_index->section == MENU_SECTION_CLIENT) return;
+//	APP_LOG(APP_LOG_LEVEL_DEBUG, "Select long callback, index: %i", cell_index->row);
 	if(cell_index->section == MENU_SECTION_ENVIRONMENT) {
 		s_sensor_format_flag = !s_sensor_format_flag;
 		layer_mark_dirty(menu_layer_get_layer(menuLayer));
 		return;
 	}
 	Device* device = &s_device_list_items[cell_index->row];
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "Select callback, index: %i", cell_index->row);
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "Select callback, index: %i", cell_index->row);
 	if (device->methods & TELLSTICK_DIM) {
 		DictionaryIterator *iter;
 		app_message_outbox_begin(&iter);
@@ -438,6 +543,8 @@ static void window_load(Window *window) {
 	GRect frame = layer_get_frame(windowLayer);
 	TelldusOn = gbitmap_create_with_resource(RESOURCE_ID_IMG_ON);
 	TelldusOff = gbitmap_create_with_resource(RESOURCE_ID_IMG_OFF2);
+	Cloud = gbitmap_create_with_resource(RESOURCE_ID_IMG_CLOUD);
+	Cloudd = gbitmap_create_with_resource(RESOURCE_ID_IMG_CLOUDD);
     
 	int num_menu_icons = 0;
 	dim_icons[num_menu_icons++] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM0I);
@@ -468,15 +575,18 @@ static void window_load(Window *window) {
 	});
   scroll_layer_set_shadow_hidden(menu_layer_get_scroll_layer(menuLayer), true);
 	menu_layer_set_click_config_onto_window(menuLayer, window);
-	layer_set_hidden(menu_layer_get_layer(menuLayer), true);
+	layer_set_hidden(menu_layer_get_layer(menuLayer), false);
 	layer_add_child(windowLayer, menu_layer_get_layer(menuLayer));
 }
 
 static void window_unload(Window *window) {
+//	if (timer != NULL) app_timer_cancel(timer);
   menu_layer_destroy(menuLayer);
 	text_layer_destroy(textLayer);
   gbitmap_destroy(TelldusOn);
   gbitmap_destroy(TelldusOff);
+  gbitmap_destroy(Cloud);
+  gbitmap_destroy(Cloudd);
   
   for (int i = 0; i < 5; i++) {
     gbitmap_destroy(dim_icons[i]);

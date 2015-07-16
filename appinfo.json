@@ -1,6 +1,7 @@
 {
     "appKeys": {
         "action": 1,
+        "battery": 10,
         "dimvalue": 8,
         "hum": 6,
         "id": 3,
@@ -19,6 +20,21 @@
     "projectType": "native",
     "resources": {
         "media": [
+            {
+                "file": "images/cloud1.png",
+                "name": "IMG_CLOUDD",
+                "type": "png"
+            },
+            {
+                "file": "images/battf.png",
+                "name": "IMG_BATTF",
+                "type": "png"
+            },
+            {
+                "file": "images/batte.png",
+                "name": "IMG_BATTE",
+                "type": "png"
+            },
             {
                 "file": "images/cloud.png",
                 "menuIcon": true,
@@ -62,10 +78,11 @@
             }
         ]
     },
+    "sdkVersion": "2",
     "shortName": "LaTC Remote",
     "uuid": "4b6b89d0-d209-45a5-b381-97e72f7b1665",
     "versionCode": 1,
-    "versionLabel": "1.1",
+    "versionLabel": "1.2",
     "watchapp": {
         "watchface": false
     }
