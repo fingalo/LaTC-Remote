@@ -60,10 +60,8 @@ var pebbleSendQueue = {
 };
 
 var dispatcher = {
-	publicKey: 'TRERU4HATHEPAWADRAXUNES3AP4GEWUS',
-	privateKey: 'ST8DABR4STEYUVAG6PHAVUPEGEF2AQAG',
-//	publicKey: 'PUT YOUR PUBLIC KEY HERE',
-//	privateKey: 'PUT YOU PRIVATE KEY HERE',
+	publicKey: 'PUT YOUR PUBLIC KEY HERE',
+	privateKey: 'PUT YOU PRIVATE KEY HERE',
 	requestTokenUrl: 'https://api.telldus.com/oauth/requestToken',
 	authorizeUrl: 'https://api.telldus.com/oauth/authorize',
 	accessTokenUrl: 'https://api.telldus.com/oauth/accessToken',
