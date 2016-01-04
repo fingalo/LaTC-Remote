@@ -19,3 +19,6 @@ Long press on middle button toggle sensor name size.
 
 1.2
 - Bugfix to show all new devices
+
+2.0
+- Support for Pebble ver. 3.x Aplite, Basalt, Chalk.
