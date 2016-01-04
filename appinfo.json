@@ -21,68 +21,207 @@
     "resources": {
         "media": [
             {
-                "file": "images/battf.png",
-                "name": "IMG_BATTF",
-                "type": "png"
+                "file": "images/cloudt.png",
+                "menuIcon": true,
+                "name": "IMG_CLOUDT",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
-                "file": "images/batte.png",
-                "name": "IMG_BATTE",
-                "type": "png"
+                "file": "images/on_i.png",
+                "name": "IMG_ONI",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
-                "file": "images/cloud1.png",
-                "name": "IMG_CLOUDD",
-                "type": "png"
+                "file": "images/off2_i.png",
+                "name": "IMG_OFF2I",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/dim75i_i.png",
+                "name": "IMG_DIM75II",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/dim50i_i.png",
+                "name": "IMG_DIM50II",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/dim25i_i.png",
+                "name": "IMG_DIM25II",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/dim100i_I.png",
+                "name": "IMG_DIM100II",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/dim0i_I.png",
+                "name": "IMG_DIM0II",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/cloudn_I.png",
+                "name": "IMG_CLOUDI",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/cloud1_I.png",
+                "name": "IMG_CLOUDDI",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
                 "file": "images/on.png",
                 "name": "IMG_ON",
-                "type": "png"
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
                 "file": "images/off2.png",
                 "name": "IMG_OFF2",
-                "type": "png"
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
                 "file": "images/dim75i.png",
                 "name": "IMG_DIM75I",
-                "type": "png"
-            },
-            {
-                "file": "images/dim100i.png",
-                "name": "IMG_DIM100I",
-                "type": "png"
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
                 "file": "images/dim50i.png",
                 "name": "IMG_DIM50I",
-                "type": "png"
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
                 "file": "images/dim25i.png",
                 "name": "IMG_DIM25I",
-                "type": "png"
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/dim100i.png",
+                "name": "IMG_DIM100I",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
                 "file": "images/dim0i.png",
                 "name": "IMG_DIM0I",
-                "type": "png"
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             },
             {
-                "file": "images/cloud.png",
-                "menuIcon": true,
+                "file": "images/cloudn.png",
                 "name": "IMG_CLOUD",
-                "type": "png"
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
+            },
+            {
+                "file": "images/cloud1.png",
+                "name": "IMG_CLOUDD",
+                "targetPlatforms": [
+                    "aplite",
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "bitmap"
             }
         ]
     },
-    "sdkVersion": "2",
+    "sdkVersion": "3",
     "shortName": "LaTC Remote",
+    "targetPlatforms": [
+        "aplite",
+        "basalt",
+        "chalk"
+    ],
     "uuid": "4b6b89d0-d209-45a5-b381-97e72f7b1665",
-    "versionCode": 1,
-    "versionLabel": "1.3",
+    "versionLabel": "2.0",
     "watchapp": {
         "watchface": false
     }

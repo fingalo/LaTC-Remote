@@ -1,4 +1,4 @@
-	function httpPost(url, params, cb) {
+function httpPost(url, params, cb) {
 	var p = '';
 	for (var param in params) {
 		if (p !== '') {
@@ -60,8 +60,9 @@ var pebbleSendQueue = {
 };
 
 var dispatcher = {
-//	publicKey: 'PUT YOUR PUBLIC KEY HERE',
-//	privateKey: 'PUT YOU PRIVATE KEY HERE',
+	//	publicKey: 'PUT YOUR PUBLIC KEY HERE',
+  //	privateKey: 'PUT YOU PRIVATE KEY HERE',
+
 	requestTokenUrl: 'https://api.telldus.com/oauth/requestToken',
 	authorizeUrl: 'https://api.telldus.com/oauth/authorize',
 	accessTokenUrl: 'https://api.telldus.com/oauth/accessToken',
@@ -70,7 +71,7 @@ var dispatcher = {
 	init: function() {
 	this.token = window.localStorage.getItem('token');
 	this.tokenSecret =  window.localStorage.getItem('tokenSecret');
-	if (this.token === '' || this.token === null) {
+	if (this.token === '' || this.token === '') {
 			this.authenticate();
 		} else {
 			getDevices();
@@ -105,6 +106,7 @@ var dispatcher = {
 				dispatcher.token = params.oauth_token;
 				dispatcher.tokenSecret = params.oauth_token_secret;
 				window.localStorage.setItem('token', params.oauth_token);
+					console.log(params.oauth_token);
 				window.localStorage.setItem('tokenSecret', params.oauth_token_secret);
 				pebbleSendQueue.send({ "module": "auth", "action": "log" });
 				Pebble.showSimpleNotificationOnPebble("Telldus Live!", "Pebble was successfully paired with your Telldus Live! account");
@@ -153,7 +155,7 @@ var clients = {};
 function getDevices() {
   
 dispatcher.doCall('clients/list', '' , function(r) {
-	console.log("clients");
+//	console.log("clients");
 
 	clients = r.client;
 	for(var i in clients) {
@@ -169,7 +171,7 @@ dispatcher.doCall('clients/list', '' , function(r) {
 		var temp;
 		if (clients[i].online)
 			online = clients[i].online;
-			console.log(online);
+	//		console.log(online);
 
 		pebbleSendQueue.send({
 			module: "client",
@@ -184,7 +186,7 @@ dispatcher.doCall('clients/list', '' , function(r) {
 	
 	
 dispatcher.doCall('sensors/list', { includeValues: 1}, function(r) {
-	console.log("sensor");
+	//console.log("sensor");
 	sensors = r.sensor;
 	for(var i in sensors) {
 		var name;
@@ -231,7 +233,7 @@ dispatcher.doCall('sensors/list', { includeValues: 1}, function(r) {
 
 
 dispatcher.doCall('devices/list', {supportedMethods: 1023}, function(r) {
-	console.log("device");
+	//console.log("device");
 	devices = r.device;
 	for(var i in devices) {
 		var type = devices[i].type;

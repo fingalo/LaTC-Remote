@@ -37,7 +37,9 @@ static Window *window;
 static TextLayer *textLayer;
 static MenuLayer *menuLayer;
 static GBitmap *TelldusOn, *TelldusOff, *Cloud, *Cloudd;
+static GBitmap *TelldusOnI, *TelldusOffI, *CloudI, *ClouddI;
 static GBitmap  *dim_icons[5];
+static GBitmap  *dim_icons_i[5];
 //AppTimer *timer;
 
 #define MAX_DEVICE_LIST_ITEMS (30)
@@ -99,15 +101,15 @@ void timer_callback(void *data) {
 */
 
 void out_sent_handler(DictionaryIterator *sent, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "outgoing message was delivered");
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "outgoing message was delivered");
 }
 
 void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_DEBUG, "outgoing message failed");
+//	APP_LOG(APP_LOG_LEVEL_DEBUG, "outgoing message failed");
 }
 
 void setSensor(int id, char *name, char *temp, char *hum, uint batt) {
-//	APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting sensor %i %s", id, name);
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting sensor %i %s", id, name);
 //		APP_LOG(APP_LOG_LEVEL_DEBUG, "battlevel %s %u", name, batt);
 	if (s_sensor_count >= MAX_SENSOR_LIST_ITEMS) {
 		return;
@@ -140,7 +142,7 @@ void setDevice(int id, char *name, int state, int methods, int dimvalue) {
 }
 
 void setGroup(int id, char *name, int state, int methods, int dimvalue) {
-//	APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting group %i %s", id, name);
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "Setting group %i %s", id, name);
 	if (s_group_count >= MAX_DEVICE_LIST_ITEMS) {
 		return;
 	}
@@ -159,12 +161,12 @@ void replaceDevice(int id, char *name, int state) {
 }
 
 void in_received_handler(DictionaryIterator *received, void *context) {
-//	APP_LOG(APP_LOG_LEVEL_DEBUG, "incoming message received");
+	//APP_LOG(APP_LOG_LEVEL_DEBUG, "incoming message received");
 	// Check for fields you expect to receive
 	Tuple *moduleTuple = dict_find(received, AKEY_MODULE);
 	Tuple *actionTuple = dict_find(received, AKEY_ACTION);
 	if (!moduleTuple || !actionTuple) {
-		APP_LOG(APP_LOG_LEVEL_DEBUG, "Malformed message");
+		//APP_LOG(APP_LOG_LEVEL_DEBUG, "Malformed message");
 		return;
 	}
 //	APP_LOG(APP_LOG_LEVEL_DEBUG, "Got module: %s, action: %s", moduleTuple->value->cstring, actionTuple->value->cstring);
@@ -272,19 +274,13 @@ void in_dropped_handler(AppMessageResult reason, void *context) {
 }
 
 static int16_t get_cell_height_callback(struct MenuLayer *menu_layer, MenuIndex *cell_index, void *data) {
-  return 44;
-	/*
-	switch (cell_index->section) {
-		case 0:
-		return 44;;
-		case 1:
-		return 44;;
-		case 2:
+
+#if defined(PBL_ROUND)
+	if( !menu_layer_is_index_selected(menuLayer, cell_index))
 		return 44;
-		default:
-		return 44;
-  }
-	*/
+	else
+#endif
+	return PBL_IF_ROUND_ELSE(60, 44);
 }
 
 static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data) {
@@ -294,17 +290,22 @@ static uint16_t menu_get_num_sections_callback(MenuLayer *menu_layer, void *data
 // Each section has a number of items;  we use a callback to specify this
 // You can also dynamically add and remove items using this
 static uint16_t get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_index, void *data) {
+	
   switch (section_index) {
 		
 		case MENU_SECTION_CLIENT:
 			if (client[0] !='\0')
 					return 1;
+		
 		case MENU_SECTION_GROUP:
-      return s_group_count;;
+      return s_group_count;
+		
     case MENU_SECTION_ENVIRONMENT:
       return s_sensor_show_count;;
+		
     case MENU_SECTION_DEVICE:
       return s_device_count;
+		
     default:
       return 0;
   }
@@ -312,13 +313,15 @@ static uint16_t get_num_rows_callback(MenuLayer *menu_layer, uint16_t section_in
 
 static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_index, void *data) {
   GBitmap *Img_status;
+	int startx = 128;
 
-	if (cell_index->section == MENU_SECTION_ENVIRONMENT){
+	graphics_context_set_compositing_mode(ctx, GCompOpSet);
+
+	if (cell_index->section == MENU_SECTION_ENVIRONMENT) {
 		
     Sensor* sensor = &s_sensor_list_items[cell_index->row];
 		
 		uint battlevel = sensor->batt;
-		int startx;
 		char buff1[30] = "";
     char p1 = ' ';
     if (sensor->hum[0] != '\0') {
@@ -329,36 +332,78 @@ static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_
 		
 		
 		if (!s_sensor_format_flag) {
-			graphics_context_set_text_color(ctx, GColorBlack);
-			snprintf (buff1,30,"%s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
-			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(30, 15, 110, 30), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-			snprintf (buff1,19,"%s",sensor->name);
-			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(2, 0, 125, 14), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
-			startx = 126;
+			if (menu_cell_layer_is_highlighted( cell_layer)) {
+				graphics_context_set_text_color(ctx, GColorWhite);
+				graphics_context_set_stroke_color(ctx, GColorWhite);
+			//	graphics_context_set_fill_color(ctx, GColorBlack);
+			}
+			else {
+				graphics_context_set_text_color(ctx, GColorBlack);				
+				graphics_context_set_stroke_color(ctx, GColorBlack);
+		//		graphics_context_set_fill_color(ctx, GColorWhite);
+			}
+
+			#if defined(PBL_ROUND)
+			if ( menu_layer_is_index_selected(menuLayer, cell_index) ){ 
+			#endif
+				snprintf (buff1,2," ");
+				menu_cell_basic_draw(ctx, cell_layer, sensor->name,  " " , NULL);
+				snprintf (buff1,30,"%s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
+				GRect bounds = layer_get_bounds(cell_layer);
+				graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect( bounds.origin.x, bounds.origin.y + bounds.size.h/2-5, bounds.size.w, bounds.size.h/2), GTextOverflowModeTrailingEllipsis, GTextAlignmentCenter, NULL);
+				startx = 126;
+#if defined(PBL_ROUND)
+			} else {
+				menu_cell_basic_draw(ctx, cell_layer, sensor->name, NULL,  NULL);			
+			}
+#endif			
 		}
 		else {
-			snprintf (buff1,30,"        %s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
-   		menu_cell_basic_draw(ctx, cell_layer, buff1, sensor->name,  NULL);
 			startx = 5;
+			snprintf (buff1,30,"        %s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
+#if defined(PBL_ROUND)
+			if ( !menu_layer_is_index_selected(menuLayer, cell_index) )
+				menu_cell_basic_draw(ctx, cell_layer, sensor->name, NULL,  NULL);
+			else
+#endif
+			 menu_cell_basic_draw(ctx, cell_layer, buff1, sensor->name,  NULL);
 		}
-		if (battlevel != SENS_BATT_UNKNOWN) {
-			if (battlevel < SENS_BATT_OK) 
-				battlevel = battlevel / 10;
-			else if (battlevel == SENS_BATT_OK)
-				battlevel = 10;
-			else battlevel = 1;
-			graphics_draw_rect(ctx, GRect(startx,7,14,8));
-			graphics_fill_rect(ctx, GRect(startx + 2,9,battlevel,4),0,GCornerNone);
-			graphics_draw_line(ctx, GPoint(startx + 14,9), GPoint(startx + 14,12));
+#if defined(PBL_ROUND)
+		if ( menu_layer_is_index_selected(menuLayer, cell_index) ) { 
+			startx = 160;
+#endif
+			if (battlevel != SENS_BATT_UNKNOWN) {
+				if (battlevel < SENS_BATT_OK) 
+					battlevel = battlevel / 10;
+				else if (battlevel == SENS_BATT_OK)
+					battlevel = 10;
+					else battlevel = 1;
+
+				graphics_context_set_stroke_color(ctx, GColorYellow);				
+				graphics_draw_rect(ctx, GRect(startx,7,14,8));
+				graphics_fill_rect(ctx, GRect(startx + 2,9,battlevel,4),0,GCornerNone);
+				graphics_draw_line(ctx, GPoint(startx + 14,9), GPoint(startx + 14,12));
+				
+			}
+#if defined(PBL_ROUND)
 		}
-	
+#endif	
 	} else 	if (cell_index->section == MENU_SECTION_CLIENT) { 
 	
 		if (client[0] != '\0') {
-			if (online[0] == '1')
-				Img_status = Cloud;
-			else
-				Img_status = Cloudd;
+			if (online[0] == '1') {
+				if (menu_cell_layer_is_highlighted( cell_layer)) {
+					Img_status = CloudI;
+				} else {
+					Img_status = Cloud;
+				}
+			} else {
+				if (menu_cell_layer_is_highlighted( cell_layer)) {
+					Img_status = ClouddI;
+				} else {
+					Img_status = Cloudd;
+				}
+			}
 			menu_cell_basic_draw(ctx, cell_layer, client, NULL, Img_status);
 		}
 	} else {	
@@ -371,20 +416,46 @@ static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_
 
     if (device->methods & TELLSTICK_DIM) {
       if (device->state == TELLSTICK_TURNOFF) {
-        Img_status = dim_icons[0]; 
+				if (menu_cell_layer_is_highlighted( cell_layer)) {
+					Img_status = dim_icons_i[0]; 
+				} else {
+					Img_status = dim_icons[0]; 				
+				}
       } 
       else if (device->state == TELLSTICK_TURNON) {
-        Img_status = dim_icons[4];
+				if (menu_cell_layer_is_highlighted( cell_layer)) {
+        	Img_status = dim_icons_i[4];
+				} else {
+        	Img_status = dim_icons[4];					
+				}
       } else {
-        Img_status = dim_icons[(device->dimvalue + 63)/64];    
+				if (menu_cell_layer_is_highlighted( cell_layer)) {
+        	Img_status = dim_icons_i[(device->dimvalue + 63)/64];
+				} else {
+        	Img_status = dim_icons[(device->dimvalue + 63)/64];    
+				}
       }			
     }
     else {			
-      Img_status = TelldusOn; 
+			if (menu_cell_layer_is_highlighted( cell_layer)) {
+	      Img_status = TelldusOnI; 
+			} else {
+				Img_status = TelldusOn; 
+			}
       if (device->state == TELLSTICK_TURNOFF) {
-        Img_status = TelldusOff; 
+				if (menu_cell_layer_is_highlighted( cell_layer)) {
+					Img_status = TelldusOffI; 
+				} else {
+					Img_status = TelldusOff; 
+				}
       }			
     }  
+#if defined(PBL_COLOR)
+	 if (device->state != TELLSTICK_TURNOFF) graphics_context_set_text_color(ctx, GColorYellow);				
+#endif
+#if defined(PBL_ROUND)
+		if ( !menu_layer_is_index_selected(menuLayer, cell_index) ) Img_status = NULL;
+#endif					
     menu_cell_basic_draw(ctx, cell_layer, device->name, NULL, Img_status);
 	}
 }
@@ -395,31 +466,38 @@ static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_
 //}
 
 
-//static void draw_separator_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_index, void *data) {
-//}
+static void draw_separator_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_index, void *data) {
+	graphics_draw_line( ctx, GPoint (0, 0), GPoint (143,0));
+}
+
+void set_sec_text(GContext* ctx, char * text, const Layer *cell_layer) {
+	GRect bounds = layer_get_bounds(cell_layer);
+	graphics_draw_text(ctx, text, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD), GRect(  bounds.origin.x, bounds.origin.y, bounds.size.w, bounds.size.h), GTextOverflowModeTrailingEllipsis, PBL_IF_ROUND_ELSE(GTextAlignmentCenter,GTextAlignmentLeft), NULL);
+}
+
 static void menu_draw_header_callback(GContext* ctx, const Layer *cell_layer, uint16_t section_index, void *data) {
   // Determine which section we're working with
   switch (section_index) {
 		
     case MENU_SECTION_CLIENT:
       // Draw title text in the section header
-      menu_cell_basic_header_draw(ctx, cell_layer, "Client");//client);
+				set_sec_text(ctx, "Client", cell_layer);
       break;
 		
     case MENU_SECTION_GROUP:
       // Draw title text in the section header
-      menu_cell_basic_header_draw(ctx, cell_layer, "Groups");
+				set_sec_text(ctx, "Groups", cell_layer);
       break;
 		
 		case MENU_SECTION_ENVIRONMENT:	
 			if (s_sensor_flag == false)
-  	    menu_cell_basic_header_draw(ctx, cell_layer, "Environment        >>>>");
+				set_sec_text(ctx, "Environment >>>>", cell_layer);
 			else
-	      menu_cell_basic_header_draw(ctx, cell_layer, "Environment");
+				set_sec_text(ctx, "Environment", cell_layer);
       break;	
 		
     case MENU_SECTION_DEVICE:
-      menu_cell_basic_header_draw(ctx, cell_layer, "Devices");
+			set_sec_text(ctx, "Devices", cell_layer);
       break;
   }
 }
@@ -469,10 +547,8 @@ static void select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *
 		MenuIndex index;
 		index.section = MENU_SECTION_ENVIRONMENT;
 		index.row =  0;
-		menu_layer_set_selected_index( menuLayer, index, MenuRowAlignCenter , true );  	
+		menu_layer_set_selected_index( menuLayer, index, MenuRowAlignCenter , false );  	
 		menu_layer_reload_data(menuLayer);
-    return;
-
 	} else 	{
 	
 		Device* device;
@@ -491,7 +567,7 @@ static void select_callback(MenuLayer *menu_layer, MenuIndex *cell_index, void *
 		Tuplet methods = TupletInteger(AKEY_METHODS, 3);
 		dict_write_tuplet(iter, &methods);
 		app_message_outbox_send();
-  device->dimvalue = 0;
+  	device->dimvalue = 0;
 	}
 }
 
@@ -543,18 +619,29 @@ static void window_load(Window *window) {
 	GRect frame = layer_get_frame(windowLayer);
 	TelldusOn = gbitmap_create_with_resource(RESOURCE_ID_IMG_ON);
 	TelldusOff = gbitmap_create_with_resource(RESOURCE_ID_IMG_OFF2);
+	TelldusOnI = gbitmap_create_with_resource(RESOURCE_ID_IMG_ONI);
+	TelldusOffI = gbitmap_create_with_resource(RESOURCE_ID_IMG_OFF2I);
 	Cloud = gbitmap_create_with_resource(RESOURCE_ID_IMG_CLOUD);
 	Cloudd = gbitmap_create_with_resource(RESOURCE_ID_IMG_CLOUDD);
+	CloudI = gbitmap_create_with_resource(RESOURCE_ID_IMG_CLOUDI);
+	ClouddI = gbitmap_create_with_resource(RESOURCE_ID_IMG_CLOUDDI);
     
 	int num_menu_icons = 0;
+	dim_icons_i[num_menu_icons] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM0II);
 	dim_icons[num_menu_icons++] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM0I);
+  dim_icons_i[num_menu_icons] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM25II);
   dim_icons[num_menu_icons++] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM25I);
+  dim_icons_i[num_menu_icons] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM50II);
   dim_icons[num_menu_icons++] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM50I);
+  dim_icons_i[num_menu_icons] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM75II);
   dim_icons[num_menu_icons++] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM75I);
   dim_icons[num_menu_icons] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM100I);
+  dim_icons_i[num_menu_icons] = gbitmap_create_with_resource(RESOURCE_ID_IMG_DIM100II);
  
   
 	textLayer = text_layer_create((GRect) { .origin = { 0, 72 }, .size = { bounds.size.w, 40 } });
+	text_layer_set_background_color(textLayer, PBL_IF_COLOR_ELSE(GColorVividCerulean, GColorWhite)) ;
+	text_layer_set_text_color(textLayer, PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack)) ;
 	text_layer_set_text(textLayer, "Loading...");
 	text_layer_set_text_alignment(textLayer, GTextAlignmentCenter);
 	text_layer_set_overflow_mode(textLayer, GTextOverflowModeWordWrap);
@@ -562,6 +649,7 @@ static void window_load(Window *window) {
   
 
 	menuLayer = menu_layer_create(frame);
+	menu_layer_set_highlight_colors(menuLayer, GColorDukeBlue, GColorWhite);
 	menu_layer_set_callbacks(menuLayer, NULL, (MenuLayerCallbacks) {
 		.get_cell_height = (MenuLayerGetCellHeightCallback) get_cell_height_callback,
 		.draw_row = (MenuLayerDrawRowCallback) draw_row_callback,
@@ -569,14 +657,15 @@ static void window_load(Window *window) {
 		.select_click = (MenuLayerSelectCallback) select_callback,
 		.select_long_click = (MenuLayerSelectCallback) select_long_callback,
     .draw_header = (MenuLayerDrawHeaderCallback) menu_draw_header_callback,
-    .get_header_height = menu_get_header_height_callback,
-    .get_num_sections = menu_get_num_sections_callback
-  //  .draw_separator = (MenuLayerDrawSeparatorCallback) draw_separator_callback
+    .get_header_height = (MenuLayerGetHeaderHeightCallback) menu_get_header_height_callback,
+    .get_num_sections = (MenuLayerGetNumberOfSectionsCallback) menu_get_num_sections_callback
+//    .draw_separator = (MenuLayerDrawSeparatorCallback) draw_separator_callback
 	});
   scroll_layer_set_shadow_hidden(menu_layer_get_scroll_layer(menuLayer), true);
 	menu_layer_set_click_config_onto_window(menuLayer, window);
-	layer_set_hidden(menu_layer_get_layer(menuLayer), false);
+	layer_set_hidden(menu_layer_get_layer(menuLayer), true);
 	layer_add_child(windowLayer, menu_layer_get_layer(menuLayer));
+	menu_layer_set_normal_colors(menuLayer,PBL_IF_COLOR_ELSE(GColorVividCerulean, GColorWhite), GColorBlack) ;
 }
 
 static void window_unload(Window *window) {
@@ -585,11 +674,16 @@ static void window_unload(Window *window) {
 	text_layer_destroy(textLayer);
   gbitmap_destroy(TelldusOn);
   gbitmap_destroy(TelldusOff);
+  gbitmap_destroy(TelldusOnI);
+  gbitmap_destroy(TelldusOffI);
   gbitmap_destroy(Cloud);
   gbitmap_destroy(Cloudd);
+   gbitmap_destroy(CloudI);
+  gbitmap_destroy(ClouddI);
   
   for (int i = 0; i < 5; i++) {
     gbitmap_destroy(dim_icons[i]);
+    gbitmap_destroy(dim_icons_i[i]);
   }
  }
 
@@ -601,6 +695,7 @@ static void init(void) {
 		.load = window_load,
 		.unload = window_unload,
 	});
+	window_set_background_color(window,PBL_IF_COLOR_ELSE(GColorVividCerulean, GColorWhite));
 	const bool animated = true;
 	s_sensor_flag = persist_exists(S_SENSOR_FLAG_PKEY) ? persist_read_bool(S_SENSOR_FLAG_PKEY) : false;
 	s_sensor_format_flag = persist_exists(S_SENSOR_FORMAT_FLAG_PKEY) ? persist_read_bool(S_SENSOR_FORMAT_FLAG_PKEY) : false;
@@ -611,10 +706,9 @@ static void init(void) {
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
 
-//	const uint32_t inbound_size = 128;
-//	const uint32_t outbound_size = 128;
-//	app_message_open(inbound_size, outbound_size);
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+	const uint32_t inbound_size = 1024;
+	const uint32_t outbound_size = 1024;
+	app_message_open(inbound_size, outbound_size);
 }
 
 static void deinit(void) {
