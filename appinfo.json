@@ -21,11 +21,6 @@
     "resources": {
         "media": [
             {
-                "file": "images/cloud1.png",
-                "name": "IMG_CLOUDD",
-                "type": "png"
-            },
-            {
                 "file": "images/battf.png",
                 "name": "IMG_BATTF",
                 "type": "png"
@@ -36,9 +31,8 @@
                 "type": "png"
             },
             {
-                "file": "images/cloud.png",
-                "menuIcon": true,
-                "name": "IMG_CLOUD",
+                "file": "images/cloud1.png",
+                "name": "IMG_CLOUDD",
                 "type": "png"
             },
             {
@@ -75,6 +69,12 @@
                 "file": "images/dim0i.png",
                 "name": "IMG_DIM0I",
                 "type": "png"
+            },
+            {
+                "file": "images/cloud.png",
+                "menuIcon": true,
+                "name": "IMG_CLOUD",
+                "type": "png"
             }
         ]
     },
@@ -82,7 +82,7 @@
     "shortName": "LaTC Remote",
     "uuid": "4b6b89d0-d209-45a5-b381-97e72f7b1665",
     "versionCode": 1,
-    "versionLabel": "1.2",
+    "versionLabel": "1.3",
     "watchapp": {
         "watchface": false
     }

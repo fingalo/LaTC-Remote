@@ -333,7 +333,7 @@ static void draw_row_callback(GContext* ctx, Layer *cell_layer, MenuIndex *cell_
 			snprintf (buff1,30,"%s%c%cC   %s%c",sensor->temp,0xc2,0xb0,sensor->hum,p1);
 			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(30, 15, 110, 30), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
 			snprintf (buff1,19,"%s",sensor->name);
-			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(2, -7, 125, 2), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
+			graphics_draw_text(ctx, buff1, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD), GRect(2, 0, 125, 14), GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft, NULL);
 			startx = 126;
 		}
 		else {

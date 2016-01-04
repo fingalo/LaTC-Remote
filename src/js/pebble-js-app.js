@@ -1,4 +1,4 @@
-function httpPost(url, params, cb) {
+	function httpPost(url, params, cb) {
 	var p = '';
 	for (var param in params) {
 		if (p !== '') {
@@ -60,8 +60,8 @@ var pebbleSendQueue = {
 };
 
 var dispatcher = {
-	publicKey: 'PUT YOUR PUBLIC KEY HERE',
-	privateKey: 'PUT YOU PRIVATE KEY HERE',
+//	publicKey: 'PUT YOUR PUBLIC KEY HERE',
+//	privateKey: 'PUT YOU PRIVATE KEY HERE',
 	requestTokenUrl: 'https://api.telldus.com/oauth/requestToken',
 	authorizeUrl: 'https://api.telldus.com/oauth/authorize',
 	accessTokenUrl: 'https://api.telldus.com/oauth/accessToken',
@@ -275,10 +275,12 @@ dispatcher.doCall('devices/list', {supportedMethods: 1023}, function(r) {
 }
 
 Pebble.addEventListener("ready", function(e) {
-	if (window.localStorage.getItem('myversion') != '1.0') {	
-		window.localStorage.setItem('myversion', '1.1');
+	console.log(window.localStorage.getItem('myversion'));
+	if (window.localStorage.getItem('myversion') != '1.3') {	
+		window.localStorage.setItem('myversion', '1.3');
 		window.localStorage.setItem('token', '');
 		window.localStorage.setItem('tokenSecret', '');
+	console.log(window.localStorage.getItem('myversion'));
 	}
 	console.log("Ready, with callback");
 	dispatcher.init();
